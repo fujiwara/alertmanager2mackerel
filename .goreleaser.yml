@@ -1,0 +1,45 @@
+version: 2
+before:
+  hooks:
+    - go mod download
+builds:
+  - env:
+      - CGO_ENABLED=0
+    main: ./cmd/alertmanager2mackerel/
+    binary: alertmanager2mackerel
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+dockers_v2:
+  - images:
+      - ghcr.io/fujiwara/alertmanager2mackerel
+    tags:
+      - "{{ .Tag }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.source: https://github.com/fujiwara/alertmanager2mackerel
+      org.opencontainers.image.description: A proxy which receives Alertmanager webhooks and posts check monitoring reports to Mackerel
+      org.opencontainers.image.licenses: MIT
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+release:
+  use_existing_draft: true
+checksum:
+  name_template: "checksums.txt"
+archives:
+  - name_template: "{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+snapshot:
+  version_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
