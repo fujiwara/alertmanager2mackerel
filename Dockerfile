@@ -1,4 +1,4 @@
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
 ARG TARGETPLATFORM
 COPY ${TARGETPLATFORM}/alertmanager2mackerel /usr/local/bin/alertmanager2mackerel
 EXPOSE 8080
