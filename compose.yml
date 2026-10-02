@@ -2,12 +2,22 @@
 services:
   alertmanager:
     build: ./e2e/alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      # Disable clustering. Otherwise notifications wait for the gossip to settle for about 10s after startup.
+      - --cluster.listen-address=
     volumes:
       - ./compose/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     ports:
       - "9093:9093"
     depends_on:
       - alertmanager2mackerel
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9093/-/ready"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
 
   alertmanager2mackerel:
     build:

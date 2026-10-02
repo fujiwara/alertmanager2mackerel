@@ -205,8 +205,10 @@ The host lookup cache lives only while the execution environment is warm.
 `compose.yml` runs Alertmanager, alertmanager2mackerel (built from the source) and a fake Mackerel API.
 
 ```console
-$ docker compose up -d --build
+$ docker compose up -d --build --wait
 ```
+
+`--wait` waits until Alertmanager becomes ready.
 
 | Service | URL | |
 |---|---|---|
@@ -242,7 +244,7 @@ An alert of an unknown host (e.g. `instance=unknown:9100`) is dropped and logged
 To post to the real Mackerel, set the API key and the API base URL, and use the host names in your organization.
 
 ```console
-$ MACKEREL_APIKEY=... MACKEREL_APIBASE=https://api.mackerelio.com/ docker compose up -d
+$ MACKEREL_APIKEY=... MACKEREL_APIBASE=https://api.mackerelio.com/ docker compose up -d --wait
 ```
 
 Stop it with `docker compose down`.
