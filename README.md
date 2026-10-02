@@ -200,6 +200,64 @@ The host lookup cache lives only while the execution environment is warm.
 - Alertmanager gives up retrying a webhook after a while. If a `resolved` notification is lost (e.g. the proxy is down for a long time), the Mackerel alert stays open, so close it manually.
 - Check name collisions are detected only within a single webhook.
 
+## Try it with Docker Compose
+
+`compose.yml` runs Alertmanager, alertmanager2mackerel (built from the source) and a fake Mackerel API.
+
+```console
+$ docker compose up -d --build
+```
+
+| Service | URL | |
+|---|---|---|
+| Alertmanager | http://localhost:9093 | config: `compose/alertmanager.yml` |
+| alertmanager2mackerel | http://localhost:8080 | |
+| fake Mackerel API | http://localhost:8081 | hosts: `web-01` (`HOST-WEB01`), `db-01` (`HOST-DB01`) |
+
+Fire an alert with `amtool` in the Alertmanager container.
+
+```console
+$ docker compose exec alertmanager amtool --alertmanager.url=http://localhost:9093 \
+    alert add alertname=DiskFull instance=web-01:9100 severity=warning device=sda1 \
+    --annotation='summary="disk is almost full"'
+```
+
+Resolve it by adding the same alert with `--end`.
+
+```console
+$ docker compose exec alertmanager amtool --alertmanager.url=http://localhost:9093 \
+    alert add alertname=DiskFull instance=web-01:9100 severity=warning device=sda1 \
+    --annotation='summary="disk is almost full"' --end=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+```
+
+See the check reports received by the fake Mackerel API.
+
+```console
+$ docker compose logs -f alertmanager2mackerel fakemackerel
+$ curl -s http://localhost:8081/_reports
+```
+
+An alert of an unknown host (e.g. `instance=unknown:9100`) is dropped and logged as a warning.
+
+To post to the real Mackerel, set the API key and the API base URL, and use the host names in your organization.
+
+```console
+$ MACKEREL_APIKEY=... MACKEREL_APIBASE=https://api.mackerelio.com/ docker compose up -d
+```
+
+Stop it with `docker compose down`.
+
+## Development
+
+```console
+$ make test      # unit tests and end-to-end tests of the binary with a fake Mackerel API
+$ make test-e2e  # end-to-end tests with a real Alertmanager (requires Docker)
+```
+
+`make test-e2e` runs Alertmanager (the image in `e2e/alertmanager/Dockerfile`, kept up to date by Dependabot; override with `ALERTMANAGER_IMAGE`) in Docker with the host network, and tests the whole flow from Alertmanager to the fake Mackerel API: firing and resolved alerts, retries on Mackerel API failures, and alerts whose host cannot be resolved.
+
+In GitHub Actions, the Alertmanager e2e tests run on the main branch and on the release pull requests created by tagpr.
+
 ## LICENSE
 
 MIT
