@@ -1,0 +1,48 @@
+# Try alertmanager2mackerel locally. See "Try it with Docker Compose" in README.md.
+services:
+  alertmanager:
+    build: ./e2e/alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      # Disable clustering. Otherwise notifications wait for the gossip to settle for about 10s after startup.
+      - --cluster.listen-address=
+    volumes:
+      - ./compose/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "9093:9093"
+    depends_on:
+      - alertmanager2mackerel
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9093/-/ready"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  alertmanager2mackerel:
+    build:
+      context: .
+      dockerfile: compose/Dockerfile
+      target: alertmanager2mackerel
+    environment:
+      # Uses the fake Mackerel API by default.
+      # Set both MACKEREL_APIKEY and MACKEREL_APIBASE=https://api.mackerelio.com/ to use the real Mackerel.
+      MACKEREL_APIKEY: ${MACKEREL_APIKEY:-dummy}
+      MACKEREL_APIBASE: ${MACKEREL_APIBASE:-http://fakemackerel:8080/}
+      A2M_FALLBACK_HOST_ID: ${A2M_FALLBACK_HOST_ID:-}
+      A2M_AUTH_TOKEN: compose-token
+      A2M_NAME_LABELS: device
+      A2M_LOG_FORMAT: text
+    ports:
+      - "8080:8080"
+    depends_on:
+      - fakemackerel
+
+  fakemackerel:
+    build:
+      context: .
+      dockerfile: compose/Dockerfile
+      target: fakemackerel
+    command: ["-hosts", "web-01=HOST-WEB01,db-01=HOST-DB01"]
+    ports:
+      - "8081:8080"

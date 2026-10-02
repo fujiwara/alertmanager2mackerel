@@ -12,3 +12,10 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
+  - package-ecosystem: docker
+    directories:
+      - "/"
+      - "/e2e/alertmanager"
+      - "/compose"
+    schedule:
+      interval: monthly
