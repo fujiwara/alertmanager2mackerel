@@ -81,6 +81,9 @@ func (cli *CLI) Run(ctx context.Context) error {
 
 // NewHandler creates a Handler from the options.
 func (cli *CLI) NewHandler() (*Handler, error) {
+	if cli.MackerelAPIKey == "" {
+		return nil, fmt.Errorf("--mackerel-api-key (MACKEREL_APIKEY) must not be empty")
+	}
 	client, err := mackerel.NewClientWithOptions(cli.MackerelAPIKey, cli.MackerelAPIBase, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Mackerel client: %w", err)
